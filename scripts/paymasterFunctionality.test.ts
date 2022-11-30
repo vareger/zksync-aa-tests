@@ -34,7 +34,7 @@ describe("Paymaster`s work test", function(){
     const provider = new Provider(hre.config.zkSyncDeploy.zkSyncNetwork);
     const depositAmount = ethers.utils.parseEther('1');
 
-    it("Deploy PureFiPaymaster and PaymasterPostOpTest", async function(){         
+    it("Deploy Paymaster and PaymasterPostOpTest", async function(){         
         wallet = new Wallet(privateKey, provider);
         emptyWallet = new Wallet(EMPTY_WALLET_PRIVATE_KEY, provider);// The wallet that will receive ERC20 tokens
 

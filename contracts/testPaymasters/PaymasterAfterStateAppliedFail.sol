@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
-contract PaymasterAfterStateApplied is AccessControl, SignLib, IPaymaster{
+contract PaymasterAfterStateAppliedFail is AccessControl, SignLib, IPaymaster{
     address to;
     address from;
     bytes public value;
@@ -61,9 +61,11 @@ contract PaymasterAfterStateApplied is AccessControl, SignLib, IPaymaster{
 
             require(hasRole(ISSUER_ROLE, issuer), "Paymaster: Issuer signature invalid");
 
-            address receiver = address(uint160(_transaction.to));
+            to = address(uint160(_transaction.to));
+            from = address(uint160(_transaction.from));
+            value = input;
+            test[to][from] = value;
 
-            
             // Note, that while the minimal amount of ETH needed is tx.ergsPrice * tx.ergsLimit,
             // neither paymaster nor account are allowed to access this context variable.
             uint256 requiredETH = _transaction.ergsLimit *
@@ -73,11 +75,6 @@ contract PaymasterAfterStateApplied is AccessControl, SignLib, IPaymaster{
                 value: requiredETH
             }("");
             require(success, "Paymaster: Failed to transfer funds to the bootloader");
-
-            to = address(uint160(_transaction.to));
-            from = address(uint160(_transaction.from));
-            value = input;
-            test[to][from] = value;
         } 
         else {
             revert("Unsupported paymaster flow");

@@ -20,11 +20,11 @@ describe("Paymaster`s work test", function(){
     let wallet: Wallet;
 
 
-    let paymaster: ethers.ethers.Contract;
-    let paymasterPostOpTest: ethers.ethers.Contract;
+    let paymasterSuccess: ethers.ethers.Contract;
+    let paymasterFail: ethers.ethers.Contract;
 
-    let PAYMASTER_ADDRESS: string;
-    let PAYMASTER_TEST_ADDRESS: string;
+    let PAYMASTER_SUCCESS_ADDRESS: string;
+    let PAYMASTER_FAIL_ADDRESS: string;
 
     let pureFiSessionID = 1;
     
@@ -34,7 +34,7 @@ describe("Paymaster`s work test", function(){
     const provider = new Provider(hre.config.zkSyncDeploy.zkSyncNetwork);
     const depositAmount = ethers.utils.parseEther('1');
 
-    it("Deploy PureFiPaymaster and PaymasterPostOpTest", async function(){         
+    it("Deploy Paymaster and PaymasterPostOpTest", async function(){         
         wallet = new Wallet(privateKey, provider);
         emptyWallet = new Wallet(EMPTY_WALLET_PRIVATE_KEY, provider);// The wallet that will receive ERC20 tokens
 
@@ -43,22 +43,31 @@ describe("Paymaster`s work test", function(){
         const artifact = hre.artifacts.readArtifactSync('TestToken');
         erc20 = new ethers.Contract(TOKEN_ADDRESS, artifact.abi, emptyWallet);
 
-        // Deploying the original paymaster
-        const paymasterArtifact = await deployer.loadArtifact('PaymasterAfterStateApplied');
-        paymaster = await deployer.deploy(paymasterArtifact, [wallet.address]);
-        PAYMASTER_ADDRESS = paymaster.address;
+        // Deploying the success paymaster
+        const paymasterSuccessArtifact = await deployer.loadArtifact('PaymasterAfterStateAppliedSuccess');
+        paymasterSuccess = await deployer.deploy(paymasterSuccessArtifact, [wallet.address]);
+        PAYMASTER_SUCCESS_ADDRESS = paymasterSuccess.address;
 
-        const ISSUER_ROLE = await paymaster.ISSUER_ROLE.call();
-        await(await paymaster.grantRole(ISSUER_ROLE, testIssuerAddress)).wait();
+        const ISSUER_ROLE = await paymasterSuccess.ISSUER_ROLE.call();
+        await(await paymasterSuccess.grantRole(ISSUER_ROLE, testIssuerAddress)).wait();
 
-        console.log(`Original paymaster address: ${PAYMASTER_ADDRESS}`);
+        console.log(`Succesfull paymaster address: ${PAYMASTER_SUCCESS_ADDRESS}`);
+
+        // Deploying the fail paymaster
+        const paymasterFailArtifact = await deployer.loadArtifact('PaymasterAfterStateAppliedFail');
+        paymasterFail = await deployer.deploy(paymasterFailArtifact, [wallet.address]);
+        PAYMASTER_FAIL_ADDRESS = paymasterFail.address;
+
+        await(await paymasterFail.grantRole(ISSUER_ROLE, testIssuerAddress)).wait();
+
+        console.log(`Succesfull paymaster address: ${PAYMASTER_FAIL_ADDRESS}`);
 
         const testContractArtifact = await hre.artifacts.readArtifactSync('TestContract');
         testContract = new ethers.Contract(TESTCONTRACT_ADDRESS, testContractArtifact.abi, emptyWallet);
     })
 
-    it('Use Paymaster for approve', async function(){
-        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_ADDRESS);
+    it('Write into storage small amount of data from validateAndPay function', async function(){
+        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
         console.log(`Approve gasPrice = ${gasPrice}`);
@@ -79,7 +88,7 @@ describe("Paymaster`s work test", function(){
         console.log("Approve fee = ", ethers.utils.formatEther(fee));
         let valueToSend = fee.add(ethers.utils.parseEther('0.0001'));
         
-        await fundPaymaster(hre, provider, valueToSend, PAYMASTER_ADDRESS);
+        await fundPaymaster(hre, provider, valueToSend, PAYMASTER_SUCCESS_ADDRESS);
         
         await (
             await erc20.approve(testContract.address, depositAmount, {
@@ -94,9 +103,52 @@ describe("Paymaster`s work test", function(){
                 ergsPerPubdata: utils.DEFAULT_ERGS_PER_PUBDATA_LIMIT,
             },
             })
-        ).wait(); 
-        // SERVER_ERROR if i try to write into storage from any point in validateAndPayForPaymasterTransaction
+        ).wait();   
+        console.log("Approve succeded");
+              
+    })
+
+    it('Write into storage large amount of data from validateAndPay function', async function(){
+        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_FAIL_ADDRESS);
+        // Estimate gas for approve transaction
+        let gasPrice = await provider.getGasPrice();
+        console.log(`Approve gasPrice = ${gasPrice}`);
+
+        // Estimate gas fee for approve transaction
+        let gasLimit = await erc20.estimateGas.approve(testContract.address, depositAmount, {
+            customData: {
+            ergsPerPubdata: utils.DEFAULT_ERGS_PER_PUBDATA_LIMIT,
+            paymasterParams: {
+                paymaster: paymasterParams.paymaster,
+                paymasterInput: paymasterParams.paymasterInput,
+            },
+            },
+        });
+        console.log(`Approve gasLimit = ${gasLimit}`);
         
+        let fee = gasPrice.mul(gasLimit.toString());
+        console.log("Approve fee = ", ethers.utils.formatEther(fee));
+        let valueToSend = fee.add(ethers.utils.parseEther('0.0001'));
+        
+        await fundPaymaster(hre, provider, valueToSend, PAYMASTER_FAIL_ADDRESS);
+    
+        await expect (
+                erc20.approve(testContract.address, depositAmount, {
+                // provide gas params manually
+                maxFeePerGas: gasPrice,
+                maxPriorityFeePerGas: gasPrice,
+                gasLimit,
+            
+                // paymaster info
+                customData: {
+                    paymasterParams,
+                    ergsPerPubdata: utils.DEFAULT_ERGS_PER_PUBDATA_LIMIT,
+                },
+                })
+        ).to.be.rejectedWith('SERVER_ERROR')
+        console.log("Approve faild with error SERVER_ERROR");
+        
+        // SERVER_ERROR if i try to write into storage from any point in validateAndPayForPaymasterTransaction 
     })
 
     const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {
