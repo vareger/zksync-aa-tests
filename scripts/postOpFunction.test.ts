@@ -74,7 +74,7 @@ describe("PostOp() tests", function(){
     it('Use PaymasterPostOp for approve', async function(){
         console.log("Write into stroga from postOp function small amount of data");
         
-        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_SUCCESS_ADDRESS);
+        let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
         console.log(`Approve gasPrice = ${gasPrice}`);
@@ -119,7 +119,7 @@ describe("PostOp() tests", function(){
     it('Use PaymasterPostOp for approve', async function(){
         console.log("Write into stroga from postOp function huge amount of data");
         
-        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_FAIL_ADDRESS);
+        let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_FAIL_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
         console.log(`Approve gasPrice = ${gasPrice}`);
@@ -161,23 +161,19 @@ describe("PostOp() tests", function(){
         console.log("Approve failed");
     })
 
-
-
-    async function signMessage(message, privateKeyWallet) {
-        const publicKeySigner = EthCrypto.publicKeyByPrivateKey(privateKeyWallet);
-        const signerAddress = EthCrypto.publicKey.toAddress(publicKeySigner);
-
-        const signerIdentity = {
-            privateKey: privateKeyWallet,
-            publicKey: publicKeySigner,
-            address: signerAddress
-        };
-        const messageHash = EthCrypto.hash.keccak256(message);
-        const signature = EthCrypto.sign(signerIdentity.privateKey, messageHash);
-        return signature;
+    const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {
+        console.log(`Funding Paymaster for ${ethers.utils.formatEther(valueToSend)} ETH`);
+        const wallet = new Wallet(privateKey, provider);
+        const deployer = new Deployer(hre, wallet);
+        await (
+        await deployer.zkWallet.sendTransaction({
+            to: paymasterAddress,
+            value: valueToSend,
+        })
+        ).wait();
     }
 
-    const preparePureFiPaymasterParams = async (ruleID:number, senderAddress:string, paymasterAddress:string) => {
+    const preparePaymasterParams = async (ruleID:number, senderAddress:string, paymasterAddress:string) => {
         //prepare package
         let currentTime = Math.round((new Date()).getTime()/1000);
         //   @param data - signed data package from the off-chain verifier
@@ -205,30 +201,29 @@ describe("PostOp() tests", function(){
                 value: ardata[3].toString()
             }
         ];
-    
+
         let signature = await signMessage(message, privateKeyIssuer);
-    
-        let pureFiParamsPacked = ethers.utils.defaultAbiCoder.encode([ "uint[4]", "bytes" ], [ ardata, signature ]);
-        let decodedData = ethers.utils.defaultAbiCoder.decode([ "uint[4]", "bytes" ], pureFiParamsPacked);
-        console.log(`Decoded: ${decodedData[0][0].toString()} ${decodedData[0][1].toString()} ${decodedData[0][2].toString()} ${decodedData[0][3].toHexString()} ${decodedData[1].toString()}`)
-    
+
+        let paramsPacked = ethers.utils.defaultAbiCoder.encode([ "uint[4]", "bytes" ], [ ardata, signature ]);
         let paymasterParams = utils.getPaymasterParams(paymasterAddress, {
-          type: 'General',
-          innerInput: pureFiParamsPacked,
+        type: 'General',
+        innerInput: paramsPacked,
         });
-      return paymasterParams;
+    return paymasterParams;
     }
 
-    const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {
-        console.log(`Funding Paymaster for ${ethers.utils.formatEther(valueToSend)} ETH`);
-        const wallet = new Wallet(privateKey, provider);
-        const deployer = new Deployer(hre, wallet);
-        await (
-          await deployer.zkWallet.sendTransaction({
-            to: paymasterAddress,
-            value: valueToSend,
-          })
-        ).wait();
+    async function signMessage(message, privateKeyWallet) {
+        const publicKeySigner = EthCrypto.publicKeyByPrivateKey(privateKeyWallet);
+        const signerAddress = EthCrypto.publicKey.toAddress(publicKeySigner);
+
+        const signerIdentity = {
+            privateKey: privateKeyWallet,
+            publicKey: publicKeySigner,
+            address: signerAddress
+        };
+        const messageHash = EthCrypto.hash.keccak256(message);
+        const signature = EthCrypto.sign(signerIdentity.privateKey, messageHash);
+        return signature;
     }
 
 })

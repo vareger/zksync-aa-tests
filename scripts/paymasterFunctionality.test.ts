@@ -26,7 +26,7 @@ describe("Paymaster`s work test", function(){
     let PAYMASTER_ADDRESS: string;
     let PAYMASTER_TEST_ADDRESS: string;
 
-    let pureFiSessionID = 1;
+    let sessionID = 1;
     
     const privateKeyIssuer = 'e3ad95aa7e9678e96fb3d867c789e765db97f9d2018fca4068979df0832a5178';
     const testIssuerAddress  = '0x84a5B4B863610989197C957c8816cF6a3B91adD2';
@@ -58,7 +58,7 @@ describe("Paymaster`s work test", function(){
     })
 
     it('Use Paymaster for approve', async function(){
-        let paymasterParams = await preparePureFiPaymasterParams(0, emptyWallet.address, PAYMASTER_ADDRESS);
+        let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
         console.log(`Approve gasPrice = ${gasPrice}`);
@@ -110,7 +110,7 @@ describe("Paymaster`s work test", function(){
         ).wait();
     }
 
-    const preparePureFiPaymasterParams = async (ruleID:number, senderAddress:string, paymasterAddress:string) => {
+    const preparePaymasterParams = async (ruleID:number, senderAddress:string, paymasterAddress:string) => {
         //prepare package
         let currentTime = Math.round((new Date()).getTime()/1000);
         //   @param data - signed data package from the off-chain verifier
@@ -119,7 +119,7 @@ describe("Paymaster`s work test", function(){
         //   data[2] - verification timestamp
         //   data[3] - verified wallet - to be the same as msg.sender
         console.log(`Input: ruleID = ${ruleID} senderAddress = ${senderAddress}`)
-        let ardata = [ethers.BigNumber.from(pureFiSessionID++), ethers.BigNumber.from(ruleID), ethers.BigNumber.from(currentTime), ethers.BigNumber.from(senderAddress)];
+        let ardata = [ethers.BigNumber.from(sessionID++), ethers.BigNumber.from(ruleID), ethers.BigNumber.from(currentTime), ethers.BigNumber.from(senderAddress)];
         
         let message = [{
                 type: "uint256",
@@ -141,10 +141,10 @@ describe("Paymaster`s work test", function(){
 
         let signature = await signMessage(message, privateKeyIssuer);
 
-        let pureFiParamsPacked = ethers.utils.defaultAbiCoder.encode([ "uint[4]", "bytes" ], [ ardata, signature ]);
+        let paramsPacked = ethers.utils.defaultAbiCoder.encode([ "uint[4]", "bytes" ], [ ardata, signature ]);
         let paymasterParams = utils.getPaymasterParams(paymasterAddress, {
         type: 'General',
-        innerInput: pureFiParamsPacked,
+        innerInput: paramsPacked,
         });
     return paymasterParams;
     }
@@ -162,6 +162,4 @@ describe("Paymaster`s work test", function(){
         const signature = EthCrypto.sign(signerIdentity.privateKey, messageHash);
         return signature;
     }
-
-    
 })
