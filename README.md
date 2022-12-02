@@ -33,3 +33,17 @@ Tests for this issue are in scripts/writeStorageAfterStateApplied.test.ts
 Run this test with command:
     `yarn test scripts/writeStorageAfterStateApplied.test.ts`
 
+# EstimateGusForPaymaster.test
+In this test I got data from paymaster through another contract. It works correctly in my case. This is function from test contract which gets data from paymaster contract and stores it into this test contract
+```
+    function checkPaymasterValue(address paymasterAddress) external {
+        value = IPaymasterEstimateGasError(paymasterAddress).value();
+    }
+```
+I can estimate gas for this function fine, it doesn`t trigger any problem. And runs with paymaster also great.
+
+Tests for this issue are in scripts/estimateGusForPaymaster.test.ts
+Run this test with command:
+    `yarn test scripts/estimateGusForPaymaster.test.ts`
+
+

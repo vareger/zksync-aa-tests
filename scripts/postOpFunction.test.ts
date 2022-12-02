@@ -9,10 +9,10 @@ import { expect } from 'chai';
 const { idText } = require("typescript");
 
 describe("PostOp() tests", function(){
-    const TOKEN_ADDRESS = '0xd875518f4C74e3fa45B59d29440A964221Bb6ffc';
-    const TESTCONTRACT_ADDRESS = '0xD28D11baAEdbF1a147aCE0f89347Cf738c2E2E16';
-    const EMPTY_WALLET_PRIVATE_KEY = '0x470a9213c65ea278134ed1643100b79269754091ade182035b15c216a19926ea';
-
+    const EMPTY_WALLET_PRIVATE_KEY = '0x55be7573ee287faa02e0c4d360306798224d01ab3db7853c8ba111e772f2d798';
+    const TOKEN_ADDRESS = '0x8249e89324ff308fBDcb9b911f9f270F3C0846CE';
+    const TESTCONTRACT_ADDRESS = '0x4c1Dd9bc204AAC20a0A17C5e254226Ca49a932B5';
+    
     let testContract: ethers.ethers.Contract;
     let erc20: ethers.ethers.Contract;
     let emptyWallet: Wallet;

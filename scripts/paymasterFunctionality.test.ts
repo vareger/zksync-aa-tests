@@ -9,9 +9,9 @@ import { expect } from 'chai';
 const { idText } = require("typescript");
 
 describe("Paymaster`s work test", function(){
-    const TOKEN_ADDRESS = '0xf1d165e47A350d83f5F8a12b756B8e9bFc896caD';
-    const TESTCONTRACT_ADDRESS = '0x62AB1ED30DDC08F3bcfe56402C48b05cf23e7840';
-    const EMPTY_WALLET_PRIVATE_KEY = '0xb0a247d3b2e6d4c17f2bb9b7026458aafa4cbba460f61306c0104ef6a382f570';
+    const EMPTY_WALLET_PRIVATE_KEY = '0x55be7573ee287faa02e0c4d360306798224d01ab3db7853c8ba111e772f2d798';
+    const TOKEN_ADDRESS = '0x8249e89324ff308fBDcb9b911f9f270F3C0846CE';
+    const TESTCONTRACT_ADDRESS = '0x4c1Dd9bc204AAC20a0A17C5e254226Ca49a932B5';
 
 
     let testContract: ethers.ethers.Contract;
