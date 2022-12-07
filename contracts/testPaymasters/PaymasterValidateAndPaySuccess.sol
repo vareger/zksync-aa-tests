@@ -13,13 +13,12 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
-contract PaymasterAfterStateAppliedSuccess is AccessControl, SignLib, IPaymaster{
-    address to;
-    address from;
-    uint256 public value;
-    mapping (address => mapping (address => uint256)) test;
-
-    uint256 public totalFeeAmountPaidTroughPaymaster;
+contract PaymasterValidateAndPaySuccess is AccessControl, SignLib, IPaymaster{
+    address to = 0x0000000000000000000000000000000000000001;
+    address from = 0x0000000000000000000000000000000000000002;
+    mapping (address => mapping (address => bytes)) test;
+    bytes testSignature;
+    address testAddress;
 
     bytes32 public constant ISSUER_ROLE = 0x0000000000000000000000000000000000000000000000000000000000009999;
 
@@ -61,10 +60,10 @@ contract PaymasterAfterStateAppliedSuccess is AccessControl, SignLib, IPaymaster
 
             require(hasRole(ISSUER_ROLE, issuer), "Paymaster: Issuer signature invalid");
 
-            to = address(uint160(_transaction.to));
-            from = address(uint160(_transaction.from));
-            value = 1;
+            bytes memory value = _transaction.paymasterInput[0:96]; // 48 bytes wroted to storage
             test[to][from] = value;
+            testSignature = signature; // +64 more bytes of signature wroted to storage
+            // works fine cause in sum it`s 112 bytes, which is alright for this function 
 
             // Note, that while the minimal amount of ETH needed is tx.ergsPrice * tx.ergsLimit,
             // neither paymaster nor account are allowed to access this context variable.
@@ -75,10 +74,6 @@ contract PaymasterAfterStateAppliedSuccess is AccessControl, SignLib, IPaymaster
                 value: requiredETH
             }("");
             require(success, "Paymaster: Failed to transfer funds to the bootloader");
-
-            value = 2;
-            test[to][from] = value;
-
         } 
         else {
             revert("Unsupported paymaster flow");

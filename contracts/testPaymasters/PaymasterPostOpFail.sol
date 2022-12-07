@@ -14,12 +14,9 @@ import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
 contract PaymasterPostOpFail is AccessControl, SignLib, IPaymaster{
-    address to;
-    address from;
-    bytes public value;
+    address to = 0x0000000000000000000000000000000000000001;
+    address from = 0x0000000000000000000000000000000000000002;
     mapping (address => mapping (address => bytes)) test;
-
-    uint256 public totalFeeAmountPaidTroughPaymaster;
 
     bytes32 public constant ISSUER_ROLE = 0x0000000000000000000000000000000000000000000000000000000000009999;
 
@@ -53,16 +50,12 @@ contract PaymasterPostOpFail is AccessControl, SignLib, IPaymaster{
         if (paymasterInputSelector == IPaymasterFlow.general.selector) {
             //unpack general() data
             (bytes memory input) = abi.decode(_transaction.paymasterInput[4:], (bytes));
-            value = input;
             (uint[4] memory data, bytes memory signature) = abi.decode(input, (uint[4], bytes));
 
             //get issuer address from the signature
             address issuer = recoverSigner(keccak256(abi.encodePacked(data[0], data[1], data[2], data[3])), signature);
 
             require(hasRole(ISSUER_ROLE, issuer), "Paymaster: Issuer signature invalid");
-
-            address receiver = address(uint160(_transaction.to));
-
             
             // Note, that while the minimal amount of ETH needed is tx.ergsPrice * tx.ergsLimit,
             // neither paymaster nor account are allowed to access this context variable.
@@ -87,8 +80,7 @@ contract PaymasterPostOpFail is AccessControl, SignLib, IPaymaster{
         ExecutionResult _txResult,
         uint256 _maxRefundedErgs
     ) external payable onlyBootloader {
-        to = address(uint160(_transaction.to));
-        from = address(uint160(_transaction.from));
+        bytes memory value = _transaction.paymasterInput[0:225];
         test[to][from] = value;
     }
 

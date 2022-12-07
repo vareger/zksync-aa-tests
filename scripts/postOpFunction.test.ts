@@ -70,9 +70,8 @@ describe("PostOp() tests", function(){
         testContract = new ethers.Contract(TESTCONTRACT_ADDRESS, testContractArtifact.abi, emptyWallet);
     })
     
-
-    it('Use PaymasterPostOp for approve', async function(){
-        console.log("Write into stroga from postOp function small amount of data");
+    it('Use PaymasterPostOp for approve (success)', async function(){
+        console.log("Write into stroga from postOp function 112 bytes of data");
         
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
@@ -116,8 +115,8 @@ describe("PostOp() tests", function(){
         console.log("Approve succeded");
     })
 
-    it('Use PaymasterPostOp for approve', async function(){
-        console.log("Write into stroga from postOp function huge amount of data");
+    it('Use PaymasterPostOp for approve (fail)', async function(){
+        console.log("Write into stroga from postOp function 113 bytes of data");
         
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_FAIL_ADDRESS);
         // Estimate gas for approve transaction
@@ -158,7 +157,8 @@ describe("PostOp() tests", function(){
             })
             ).wait()
         ).to.be.rejectedWith("CALL_EXCEPTION");
-        console.log("Approve failed");
+
+        console.log("Approve failed cause you tried to write into storage more than 112 bytes");
     })
 
     const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {

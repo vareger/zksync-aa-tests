@@ -8,7 +8,7 @@ import * as hre from 'hardhat';
 import { expect } from 'chai';
 const { idText } = require("typescript");
 
-describe("Paymaster`s work test", function(){
+describe("Paymaster`s validateAndPay function test", function(){
     const EMPTY_WALLET_PRIVATE_KEY = '0x55be7573ee287faa02e0c4d360306798224d01ab3db7853c8ba111e772f2d798';
     const TOKEN_ADDRESS = '0x8249e89324ff308fBDcb9b911f9f270F3C0846CE';
     const TESTCONTRACT_ADDRESS = '0x4c1Dd9bc204AAC20a0A17C5e254226Ca49a932B5';
@@ -43,7 +43,7 @@ describe("Paymaster`s work test", function(){
         erc20 = new ethers.Contract(TOKEN_ADDRESS, artifact.abi, emptyWallet);
 
         // Deploying the success paymaster
-        const paymasterSuccessArtifact = await deployer.loadArtifact('PaymasterAfterStateAppliedSuccess');
+        const paymasterSuccessArtifact = await deployer.loadArtifact('PaymasterValidateAndPaySuccess');
         paymasterSuccess = await deployer.deploy(paymasterSuccessArtifact, [wallet.address]);
         PAYMASTER_SUCCESS_ADDRESS = paymasterSuccess.address;
 
@@ -53,7 +53,7 @@ describe("Paymaster`s work test", function(){
         console.log(`Succesfull paymaster address: ${PAYMASTER_SUCCESS_ADDRESS}`);
 
         // Deploying the fail paymaster
-        const paymasterFailArtifact = await deployer.loadArtifact('PaymasterAfterStateAppliedFail');
+        const paymasterFailArtifact = await deployer.loadArtifact('PaymasterValidateAndPayFail');
         paymasterFail = await deployer.deploy(paymasterFailArtifact, [wallet.address]);
         PAYMASTER_FAIL_ADDRESS = paymasterFail.address;
 
@@ -65,7 +65,7 @@ describe("Paymaster`s work test", function(){
         testContract = new ethers.Contract(TESTCONTRACT_ADDRESS, testContractArtifact.abi, emptyWallet);
     })
 
-    it('Write into storage small amount of data from validateAndPay function', async function(){
+    it('Write into storage 112 bytes of data from validateAndPay function', async function(){
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
@@ -103,10 +103,10 @@ describe("Paymaster`s work test", function(){
             },
             })
         ).wait();   
-        console.log("Approve succeded");      
+        console.log("Approve succeded");   
     })
 
-    it('Write into storage large amount of data from validateAndPay function', async function(){
+    it('Write into storage 113 bytes of data from validateAndPay function', async function(){
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_FAIL_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
@@ -131,7 +131,8 @@ describe("Paymaster`s work test", function(){
         await fundPaymaster(hre, provider, valueToSend, PAYMASTER_FAIL_ADDRESS);
     
         await expect (
-                erc20.approve(testContract.address, depositAmount, {
+            (
+            await erc20.approve(testContract.address, depositAmount, {
                 // provide gas params manually
                 maxFeePerGas: gasPrice,
                 maxPriorityFeePerGas: gasPrice,
@@ -142,10 +143,11 @@ describe("Paymaster`s work test", function(){
                     paymasterParams,
                     ergsPerPubdata: utils.DEFAULT_ERGS_PER_PUBDATA_LIMIT,
                 },
-                })
-        ).to.be.rejectedWith('SERVER_ERROR')
-        console.log("Approve faild with error SERVER_ERROR");
-        // SERVER_ERROR if i try to write into storage from any point in validateAndPayForPaymasterTransaction 
+            })
+            ).wait()
+        ).to.be.rejectedWith("CALL_EXCEPTION");
+
+        console.log("Approve faild cause you tried to write into storage more than 112 bytes");
     })
 
     const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {

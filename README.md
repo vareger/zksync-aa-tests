@@ -1,5 +1,5 @@
 # Paymaster
-This paymaster contract is used for paying user's fees in any ERC20 token. All logic is implemented in validateAndPayForPaymasterTransaction function, that will be called automaticaly when user will send any kind of transaction and pass aditional parameters for paymaster.
+This paymaster contract is used for paying user's fees in any ERC20 token. All logic is implemented in validateAndPayForPaymasterTransaction function, that will be called automaticaly when user send any kind of transaction and pass aditional parameters for paymaster.
 
 Example of using this paymaster is shown in scripts/paymasterFunctionality.test.ts. 
 
@@ -10,7 +10,8 @@ Run this file with command:
 This test is about checking possibility of writing data to the storage from postOp function.
 Answering the main question, it is possible but depands from amount of data that has to be stored. 
 
-In contracts/testPaymaster are two files PaymasterPostOpSuccess.sol and PaymasterPostOpFail.sol. In the first one I store uint256 data (`1` for example) and it's working correctly, in another contract I tried to store input variable into testMapping and it fails witn CALL_EXEPTION error.
+In contracts/testPaymaster are two files PaymasterPostOpSuccess.sol and PaymasterPostOpFail.sol. In the first one I store 112 bytes of data and it's working correctly, in another contract I tried to store (133 bytes) into testMapping and it fails witn CALL_EXEPTION error.
+So you can store only 112 bytes of any data into the storage.
 
 This tests are written in scripts/postOpFunction.test.ts. There are two cases (with success and fail accordingly)
 
@@ -27,11 +28,15 @@ after this lines:
     require(success, "Paymaster: Failed to transfer funds to the bootloader");
 ```
 
-Like in previous test, it's possible to write in storage from there, but only small amounts of data (possible to write '1' but not input variable). This rule also applies for writing into storage even before tx state is applied. The error that is triggered in this cases is `SERVER_ERROR`  and it works correctly if I write into storage small amount of data or don`t write any additional data at all.
+Like in previous test, it's possible to write in storage from there, but only 122 or less bytes of data. 
+This rule also applies for writing into storage even before tx state is applied. The error that is triggered in this cases is `CALL_EXCEPTION`.
 
-Tests for this issue are in scripts/writeStorageAfterStateApplied.test.ts
+Tests for this issue are in scripts/validateAndPayFunction.test.ts
 Run this test with command:
-    `yarn test scripts/writeStorageAfterStateApplied.test.ts`
+    `yarn test scripts/validateAndPayFunction.test.ts`
+
+# Important
+112 bytes is a value that you can store in your paymaster's storage in sum from both postOp and validateAndPay functions.
 
 # EstimateGusForPaymaster.test
 In this test I got data from paymaster through another contract. It works correctly in my case. This is function from test contract which gets data from paymaster contract and stores it into this test contract
