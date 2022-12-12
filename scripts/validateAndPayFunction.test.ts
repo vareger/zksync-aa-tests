@@ -65,7 +65,7 @@ describe("Paymaster`s validateAndPay function test", function(){
         testContract = new ethers.Contract(TESTCONTRACT_ADDRESS, testContractArtifact.abi, emptyWallet);
     })
 
-    it('Write into storage 112 bytes of data from validateAndPay function', async function(){
+    it('Write into storage 160 bytes of data from validateAndPay function', async function(){
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
@@ -106,7 +106,7 @@ describe("Paymaster`s validateAndPay function test", function(){
         console.log("Approve succeded");   
     })
 
-    it('Write into storage 113 bytes of data from validateAndPay function', async function(){
+    it('Write into storage 162 bytes of data from validateAndPay function', async function(){
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_FAIL_ADDRESS);
         // Estimate gas for approve transaction
         let gasPrice = await provider.getGasPrice();
@@ -147,7 +147,7 @@ describe("Paymaster`s validateAndPay function test", function(){
             ).wait()
         ).to.be.rejectedWith("CALL_EXCEPTION");
 
-        console.log("Approve faild cause you tried to write into storage more than 112 bytes");
+        console.log("Approve faild cause you tried to write into storage more than 160 bytes");
     })
 
     const fundPaymaster = async (hre: HardhatRuntimeEnvironment, provider, valueToSend, paymasterAddress:string) => {

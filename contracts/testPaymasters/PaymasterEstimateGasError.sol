@@ -14,10 +14,8 @@ import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
 contract PaymasterEstimateGasError is AccessControl, SignLib, IPaymaster, IPaymasterEstimateGasError{
-    address to;
-    address from;
-    uint256 public value;
-    mapping (address => mapping (address => uint256)) test;
+    // uint256 public value;
+    mapping (address => uint256) test;
 
     uint256 public totalFeeAmountPaidTroughPaymaster;
 
@@ -61,10 +59,10 @@ contract PaymasterEstimateGasError is AccessControl, SignLib, IPaymaster, IPayma
 
             require(hasRole(ISSUER_ROLE, issuer), "Paymaster: Issuer signature invalid");
 
-            to = address(uint160(_transaction.to));
-            from = address(uint160(_transaction.from));
-            value = 18;
-            test[to][from] = value;
+            address to = address(uint160(_transaction.to));
+            // address from = address(uint160(_transaction.from));
+            uint256 value = 18;
+            test[to] = value;
 
             // Note, that while the minimal amount of ETH needed is tx.ergsPrice * tx.ergsLimit,
             // neither paymaster nor account are allowed to access this context variable.
@@ -75,9 +73,6 @@ contract PaymasterEstimateGasError is AccessControl, SignLib, IPaymaster, IPayma
                 value: requiredETH
             }("");
             require(success, "Paymaster: Failed to transfer funds to the bootloader");
-
-            value = 2;
-            test[to][from] = value;
 
         } 
         else {
@@ -93,6 +88,10 @@ contract PaymasterEstimateGasError is AccessControl, SignLib, IPaymaster, IPayma
         ExecutionResult _txResult,
         uint256 _maxRefundedErgs
     ) external payable onlyBootloader {
+    }
+
+    function getValue(address target) external override view returns(uint256){
+        return test[target];
     }
 
 

@@ -53,7 +53,7 @@ describe("PostOp() tests", function(){
 
         await(await paymasterPostOpSuccess.grantRole(ISSUER_ROLE, testIssuerAddress)).wait();
 
-        console.log(`Test paymaster address: ${PAYMASTER_TEST_SUCCESS_ADDRESS}`);
+        console.log(`Test paymaster (with test succeeding) address: ${PAYMASTER_TEST_SUCCESS_ADDRESS}`);
 
         // Deploying the test paymaster fail
         const paymasterPostOpTestArtifact = await deployer.loadArtifact('PaymasterPostOpFail');
@@ -62,7 +62,7 @@ describe("PostOp() tests", function(){
 
         await(await paymasterPostOpFail.grantRole(ISSUER_ROLE, testIssuerAddress)).wait();
 
-        console.log(`Test paymaster address: ${PAYMASTER_TEST_FAIL_ADDRESS}`);
+        console.log(`Test paymaster (with test failing) address: ${PAYMASTER_TEST_FAIL_ADDRESS}`);
 
 
         // Get test contact
@@ -71,7 +71,7 @@ describe("PostOp() tests", function(){
     })
     
     it('Use PaymasterPostOp for approve (success)', async function(){
-        console.log("Write into stroga from postOp function 112 bytes of data");
+        console.log("Write into storage from postOp function 224 bytes of data");
         
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_SUCCESS_ADDRESS);
         // Estimate gas for approve transaction
@@ -116,7 +116,7 @@ describe("PostOp() tests", function(){
     })
 
     it('Use PaymasterPostOp for approve (fail)', async function(){
-        console.log("Write into stroga from postOp function 113 bytes of data");
+        console.log("Write into stroga from postOp function 225 bytes of data");
         
         let paymasterParams = await preparePaymasterParams(0, emptyWallet.address, PAYMASTER_TEST_FAIL_ADDRESS);
         // Estimate gas for approve transaction
@@ -205,6 +205,7 @@ describe("PostOp() tests", function(){
         let signature = await signMessage(message, privateKeyIssuer);
 
         let paramsPacked = ethers.utils.defaultAbiCoder.encode([ "uint[4]", "bytes" ], [ ardata, signature ]);
+        console.log("paymaster input length ",(paramsPacked.length-2)/2, " bytes");
         let paymasterParams = utils.getPaymasterParams(paymasterAddress, {
         type: 'General',
         innerInput: paramsPacked,

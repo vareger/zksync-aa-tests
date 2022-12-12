@@ -14,8 +14,6 @@ import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
 contract PaymasterValidateAndPaySuccess is AccessControl, SignLib, IPaymaster{
-    address to = 0x0000000000000000000000000000000000000001;
-    address from = 0x0000000000000000000000000000000000000002;
     mapping (address => mapping (address => bytes)) test;
     bytes testSignature;
     address testAddress;
@@ -60,10 +58,8 @@ contract PaymasterValidateAndPaySuccess is AccessControl, SignLib, IPaymaster{
 
             require(hasRole(ISSUER_ROLE, issuer), "Paymaster: Issuer signature invalid");
 
-            bytes memory value = _transaction.paymasterInput[0:96]; // 48 bytes wroted to storage
-            test[to][from] = value;
-            testSignature = signature; // +64 more bytes of signature wroted to storage
-            // works fine cause in sum it`s 112 bytes, which is alright for this function 
+            bytes memory value = _transaction.paymasterInput[0:96]; // 96 bytes wroted to storage
+            test[address(uint160(_transaction.to))][address(uint160(_transaction.from))] = value;
 
             // Note, that while the minimal amount of ETH needed is tx.ergsPrice * tx.ergsLimit,
             // neither paymaster nor account are allowed to access this context variable.
@@ -74,6 +70,9 @@ contract PaymasterValidateAndPaySuccess is AccessControl, SignLib, IPaymaster{
                 value: requiredETH
             }("");
             require(success, "Paymaster: Failed to transfer funds to the bootloader");
+            
+            testSignature = signature; // +64 more bytes of signature wroted to storage
+            // works fine cause in sum it`s 160 bytes, which is allright for this function 
         } 
         else {
             revert("Unsupported paymaster flow");

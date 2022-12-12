@@ -16,6 +16,7 @@ contract TestContract{
     }
 
     function checkPaymasterValue(address paymasterAddress) external {
-        value = IPaymasterEstimateGasError(paymasterAddress).value();
+        value = IPaymasterEstimateGasError(paymasterAddress).getValue(address(this));
+        require(value == 18, "This is the value that was set in Paymaster");
     }
 }

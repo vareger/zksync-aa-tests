@@ -14,8 +14,6 @@ import ".././libraries/SignLib.sol";
 import ".././libraries/BytesLib.sol";
 
 contract PaymasterPostOpSuccess is AccessControl, SignLib, IPaymaster{
-    address to = 0x0000000000000000000000000000000000000001;
-    address from = 0x0000000000000000000000000000000000000002;
     mapping (address => mapping (address => bytes)) test;
 
     bytes32 public constant ISSUER_ROLE = 0x0000000000000000000000000000000000000000000000000000000000009999;
@@ -85,7 +83,7 @@ contract PaymasterPostOpSuccess is AccessControl, SignLib, IPaymaster{
         uint256 _maxRefundedErgs
     ) external payable onlyBootloader {
         bytes memory value = _transaction.paymasterInput[0:224];
-        test[to][from] = value;
+        test[address(uint160(_transaction.to))][address(uint160(_transaction.from))] = value;
     }
 
 
